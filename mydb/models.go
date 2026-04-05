@@ -10,7 +10,7 @@ import (
 
 type Measurement struct {
 	Datewhen  sql.NullInt64
-	ID        sql.NullInt64
+	Serverid  sql.NullInt64
 	Firstbyte sql.NullInt64
 	Lastbyte  sql.NullInt64
 	Ping      sql.NullInt64

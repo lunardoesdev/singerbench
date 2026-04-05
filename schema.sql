@@ -5,7 +5,7 @@ create table if not exists proxies (
 
 create table if not exists measurements (
     datewhen integer,
-    id integer,
+    serverid integer,
     firstbyte integer,
     lastbyte integer,
     ping integer
