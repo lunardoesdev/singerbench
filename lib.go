@@ -9,55 +9,18 @@ import (
 
 	_ "embed"
 
-	_ "modernc.org/sqlite"
-
-	"github.com/lunardoesdev/singerbench/mydb"
+	"github.com/lunardoesdev/singerbench/db2"
 )
-
-//go:embed schema.sql
-var initsql string
-var queries *mydb.Queries
-var db sql.DB
-
-func init() {
-	ctx := context.Background()
-	db, err := sql.Open("sqlite", ":memory:")
-	if err != nil {
-		log.Fatalf("%w\n", err)
-	}
-
-	if _, err := db.ExecContext(ctx, initsql); err != nil {
-		log.Fatalf("%w\n", err)
-	}
-
-	queries = mydb.New(db)
-}
-
-func addproxy(ctx context.Context, proxy string) error {
-	prox := sql.NullString{
-		String: proxy,
-		Valid:  true,
-	}
-	_, err := queries.GetProxyIdByLink(ctx, prox)
-	if err != nil {
-		//proxy doesnt exist
-		if err := queries.AddProxy(ctx, prox); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
 
 func run() error {
 	ctx := context.Background()
 
-	err := addproxy(ctx, "http://127.0.0.1:7777")
+	err := db2.Addproxy(ctx, "http://127.0.0.1:7777")
 	if err != nil {
 		return err
 	}
 
-	theproxy, err := queries.GetProxyIdByLink(ctx, sql.NullString{
+	theproxy, err := db2.Queries.GetProxyIdByLink(ctx, sql.NullString{
 		String: "http://127.0.0.1:7777", Valid: true,
 	})
 	if err != nil {
