@@ -32,3 +32,16 @@ select * from proxies limit ? offset ?;
 
 -- name: ListMeasurements :many
 select * from measurements limit ? offset ?;
+
+-- name: CountSubscriptions :one
+select count(*) from subscriptions;
+
+-- name: CountProxies :one
+select count(*) from proxies;
+
+-- name: CountMeasurements :one
+select count(*) from measurements;
+
+-- name: CountMeasurementsByProxy :one
+select serverid, count(*)
+from measurements where serverid = ?;

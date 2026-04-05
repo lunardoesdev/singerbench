@@ -28,6 +28,56 @@ func (q *Queries) AddSubscription(ctx context.Context, link sql.NullString) erro
 	return err
 }
 
+const countMeasurements = `-- name: CountMeasurements :one
+select count(*) from measurements
+`
+
+func (q *Queries) CountMeasurements(ctx context.Context) (int64, error) {
+	row := q.db.QueryRowContext(ctx, countMeasurements)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const countMeasurementsByProxy = `-- name: CountMeasurementsByProxy :one
+select serverid, count(*)
+from measurements where serverid = ?
+`
+
+type CountMeasurementsByProxyRow struct {
+	Serverid sql.NullInt64
+	Count    int64
+}
+
+func (q *Queries) CountMeasurementsByProxy(ctx context.Context, serverid sql.NullInt64) (CountMeasurementsByProxyRow, error) {
+	row := q.db.QueryRowContext(ctx, countMeasurementsByProxy, serverid)
+	var i CountMeasurementsByProxyRow
+	err := row.Scan(&i.Serverid, &i.Count)
+	return i, err
+}
+
+const countProxies = `-- name: CountProxies :one
+select count(*) from proxies
+`
+
+func (q *Queries) CountProxies(ctx context.Context) (int64, error) {
+	row := q.db.QueryRowContext(ctx, countProxies)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const countSubscriptions = `-- name: CountSubscriptions :one
+select count(*) from subscriptions
+`
+
+func (q *Queries) CountSubscriptions(ctx context.Context) (int64, error) {
+	row := q.db.QueryRowContext(ctx, countSubscriptions)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const getProxyIdByLink = `-- name: GetProxyIdByLink :one
 select id, link from proxies where link = ?
 `
