@@ -9,6 +9,7 @@ import (
 )
 
 type Measurement struct {
+	ID        int64
 	Datewhen  sql.NullInt64
 	Serverid  sql.NullInt64
 	Firstbyte sql.NullInt64

@@ -1,5 +1,3 @@
--- name: GetA :one
-select * from proxies
-where id = ?;
-
--- name: SaveMeasure
+-- name: SaveMeasure :exec
+insert into measurements (serverid, datewhen, ping, firstbyte, lastbyte)
+values (?, ?, ?, ?, ?);

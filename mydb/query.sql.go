@@ -7,6 +7,7 @@ package mydb
 
 import (
 	"context"
+	"database/sql"
 )
 
 const getA = `-- name: GetA :one
@@ -19,4 +20,28 @@ func (q *Queries) GetA(ctx context.Context, id int64) (Proxy, error) {
 	var i Proxy
 	err := row.Scan(&i.ID, &i.Link)
 	return i, err
+}
+
+const saveMeasure = `-- name: SaveMeasure :exec
+insert into measurements (serverid, datewhen, ping, firstbyte, lastbyte)
+values (?, ?, ?, ?, ?)
+`
+
+type SaveMeasureParams struct {
+	Serverid  sql.NullInt64
+	Datewhen  sql.NullInt64
+	Ping      sql.NullInt64
+	Firstbyte sql.NullInt64
+	Lastbyte  sql.NullInt64
+}
+
+func (q *Queries) SaveMeasure(ctx context.Context, arg SaveMeasureParams) error {
+	_, err := q.db.ExecContext(ctx, saveMeasure,
+		arg.Serverid,
+		arg.Datewhen,
+		arg.Ping,
+		arg.Firstbyte,
+		arg.Lastbyte,
+	)
+	return err
 }

@@ -4,6 +4,7 @@ create table if not exists proxies (
 );
 
 create table if not exists measurements (
+    id integer primary key autoincrement,
     datewhen integer,
     serverid integer,
     firstbyte integer,
