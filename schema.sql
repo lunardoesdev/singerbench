@@ -1,5 +1,5 @@
 create table if not exists proxies (
-    id integer primary key,
+    id integer primary key autoincrement,
     link text
 );
 
