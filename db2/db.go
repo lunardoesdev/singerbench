@@ -45,3 +45,99 @@ func Addproxy(ctx context.Context, proxy string) error {
 
 	return nil
 }
+
+func IterateProxies(pagesize int64) func(func(mydb.Proxy) bool) {
+	return func(yield func(mydb.Proxy) bool) {
+		var curPage int64 = 0
+		var curElement int64 = 0
+
+		ctx := context.Background()
+
+		count, err := Queries.CountProxies(ctx)
+		if err != nil {
+			goto finish
+		}
+
+		for curElement < count {
+			page, err := Queries.ListProxies(ctx, mydb.ListProxiesParams{
+				Offset: curPage * pagesize,
+				Limit:  pagesize,
+			})
+			if err != nil {
+				goto finish
+			}
+
+			for _, v := range page {
+				yield(v)
+				curElement++
+			}
+			curPage++
+		}
+
+	finish:
+	}
+}
+
+func IterateSubscriptions(pagesize int64) func(func(mydb.Subscription) bool) {
+	return func(yield func(mydb.Subscription) bool) {
+		var curPage int64 = 0
+		var curElement int64 = 0
+
+		ctx := context.Background()
+
+		count, err := Queries.CountSubscriptions(ctx)
+		if err != nil {
+			goto finish2
+		}
+
+		for curElement < count {
+			page, err := Queries.ListSubscriptoins(ctx, mydb.ListSubscriptoinsParams{
+				Offset: curPage * pagesize,
+				Limit:  pagesize,
+			})
+			if err != nil {
+				goto finish2
+			}
+
+			for _, v := range page {
+				yield(v)
+				curElement++
+			}
+			curPage++
+		}
+
+	finish2:
+	}
+}
+
+func IterateMeasurements(pagesize int64) func(func(mydb.Measurement) bool) {
+	return func(yield func(mydb.Measurement) bool) {
+		var curPage int64 = 0
+		var curElement int64 = 0
+
+		ctx := context.Background()
+
+		count, err := Queries.CountMeasurements(ctx)
+		if err != nil {
+			goto finish3
+		}
+
+		for curElement < count {
+			page, err := Queries.ListMeasurements(ctx, mydb.ListMeasurementsParams{
+				Offset: curPage * pagesize,
+				Limit:  pagesize,
+			})
+			if err != nil {
+				goto finish3
+			}
+
+			for _, v := range page {
+				yield(v)
+				curElement++
+			}
+			curPage++
+		}
+
+	finish3:
+	}
+}
