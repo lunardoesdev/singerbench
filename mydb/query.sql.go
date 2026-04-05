@@ -10,24 +10,80 @@ import (
 	"database/sql"
 )
 
-const getA = `-- name: GetA :one
-select id, link from proxies
-where id = ?
+const addProxy = `-- name: AddProxy :exec
+insert into proxies(link) values(?)
 `
 
-func (q *Queries) GetA(ctx context.Context, id int64) (Proxy, error) {
-	row := q.db.QueryRowContext(ctx, getA, id)
+func (q *Queries) AddProxy(ctx context.Context, link sql.NullString) error {
+	_, err := q.db.ExecContext(ctx, addProxy, link)
+	return err
+}
+
+const addSubscription = `-- name: AddSubscription :exec
+insert into subscriptions(link) values(?)
+`
+
+func (q *Queries) AddSubscription(ctx context.Context, link sql.NullString) error {
+	_, err := q.db.ExecContext(ctx, addSubscription, link)
+	return err
+}
+
+const getProxyIdByLink = `-- name: GetProxyIdByLink :one
+select id, link from proxies where link = ?
+`
+
+func (q *Queries) GetProxyIdByLink(ctx context.Context, link sql.NullString) (Proxy, error) {
+	row := q.db.QueryRowContext(ctx, getProxyIdByLink, link)
 	var i Proxy
 	err := row.Scan(&i.ID, &i.Link)
 	return i, err
 }
 
-const saveMeasure = `-- name: SaveMeasure :exec
+const getSubscriptionIdByLink = `-- name: GetSubscriptionIdByLink :one
+select id, link from subscriptions where link = ?
+`
+
+func (q *Queries) GetSubscriptionIdByLink(ctx context.Context, link sql.NullString) (Subscription, error) {
+	row := q.db.QueryRowContext(ctx, getSubscriptionIdByLink, link)
+	var i Subscription
+	err := row.Scan(&i.ID, &i.Link)
+	return i, err
+}
+
+const removeMeasurement = `-- name: RemoveMeasurement :exec
+delete from measurements
+where id = ?
+`
+
+func (q *Queries) RemoveMeasurement(ctx context.Context, id int64) error {
+	_, err := q.db.ExecContext(ctx, removeMeasurement, id)
+	return err
+}
+
+const removeProxy = `-- name: RemoveProxy :exec
+delete from proxies where link = ?
+`
+
+func (q *Queries) RemoveProxy(ctx context.Context, link sql.NullString) error {
+	_, err := q.db.ExecContext(ctx, removeProxy, link)
+	return err
+}
+
+const removeSubscription = `-- name: RemoveSubscription :exec
+delete from subscriptions where link = ?
+`
+
+func (q *Queries) RemoveSubscription(ctx context.Context, link sql.NullString) error {
+	_, err := q.db.ExecContext(ctx, removeSubscription, link)
+	return err
+}
+
+const saveMeasurement = `-- name: SaveMeasurement :exec
 insert into measurements (serverid, datewhen, ping, firstbyte, lastbyte)
 values (?, ?, ?, ?, ?)
 `
 
-type SaveMeasureParams struct {
+type SaveMeasurementParams struct {
 	Serverid  sql.NullInt64
 	Datewhen  sql.NullInt64
 	Ping      sql.NullInt64
@@ -35,8 +91,8 @@ type SaveMeasureParams struct {
 	Lastbyte  sql.NullInt64
 }
 
-func (q *Queries) SaveMeasure(ctx context.Context, arg SaveMeasureParams) error {
-	_, err := q.db.ExecContext(ctx, saveMeasure,
+func (q *Queries) SaveMeasurement(ctx context.Context, arg SaveMeasurementParams) error {
+	_, err := q.db.ExecContext(ctx, saveMeasurement,
 		arg.Serverid,
 		arg.Datewhen,
 		arg.Ping,

@@ -21,3 +21,8 @@ type Proxy struct {
 	ID   int64
 	Link sql.NullString
 }
+
+type Subscription struct {
+	ID   int64
+	Link sql.NullString
+}

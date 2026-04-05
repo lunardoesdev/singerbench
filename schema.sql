@@ -1,6 +1,6 @@
 create table if not exists proxies (
     id integer primary key autoincrement,
-    link text
+    link text unique
 );
 
 create table if not exists measurements (
@@ -12,3 +12,7 @@ create table if not exists measurements (
     ping integer
 );
 
+create table if not exists subscriptions (
+    id integer primary key autoincrement,
+    link text unique
+);
