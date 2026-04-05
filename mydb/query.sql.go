@@ -50,6 +50,109 @@ func (q *Queries) GetSubscriptionIdByLink(ctx context.Context, link sql.NullStri
 	return i, err
 }
 
+const listMeasurements = `-- name: ListMeasurements :many
+select id, datewhen, serverid, firstbyte, lastbyte, ping from measurements limit ? offset ?
+`
+
+type ListMeasurementsParams struct {
+	Limit  int64
+	Offset int64
+}
+
+func (q *Queries) ListMeasurements(ctx context.Context, arg ListMeasurementsParams) ([]Measurement, error) {
+	rows, err := q.db.QueryContext(ctx, listMeasurements, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Measurement
+	for rows.Next() {
+		var i Measurement
+		if err := rows.Scan(
+			&i.ID,
+			&i.Datewhen,
+			&i.Serverid,
+			&i.Firstbyte,
+			&i.Lastbyte,
+			&i.Ping,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listProxies = `-- name: ListProxies :many
+select id, link from proxies limit ? offset ?
+`
+
+type ListProxiesParams struct {
+	Limit  int64
+	Offset int64
+}
+
+func (q *Queries) ListProxies(ctx context.Context, arg ListProxiesParams) ([]Proxy, error) {
+	rows, err := q.db.QueryContext(ctx, listProxies, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Proxy
+	for rows.Next() {
+		var i Proxy
+		if err := rows.Scan(&i.ID, &i.Link); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listSubscriptoins = `-- name: ListSubscriptoins :many
+select id, link from subscriptions limit ? offset ?
+`
+
+type ListSubscriptoinsParams struct {
+	Limit  int64
+	Offset int64
+}
+
+func (q *Queries) ListSubscriptoins(ctx context.Context, arg ListSubscriptoinsParams) ([]Subscription, error) {
+	rows, err := q.db.QueryContext(ctx, listSubscriptoins, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Subscription
+	for rows.Next() {
+		var i Subscription
+		if err := rows.Scan(&i.ID, &i.Link); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const removeMeasurement = `-- name: RemoveMeasurement :exec
 delete from measurements
 where id = ?

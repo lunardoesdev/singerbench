@@ -23,3 +23,12 @@ select * from subscriptions where link = ?;
 
 -- name: RemoveSubscription :exec
 delete from subscriptions where link = ?;
+
+-- name: ListSubscriptoins :many
+select * from subscriptions limit ? offset ?;
+
+-- name: ListProxies :many
+select * from proxies limit ? offset ?;
+
+-- name: ListMeasurements :many
+select * from measurements limit ? offset ?;
