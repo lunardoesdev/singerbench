@@ -9,6 +9,9 @@ import (
 
 	"github.com/lunardoesdev/singerbench/mydb"
 	_ "modernc.org/sqlite"
+
+	"os"
+	"path"
 )
 
 //go:embed schema.sql
@@ -18,7 +21,16 @@ var Db sql.DB
 
 func init() {
 	ctx := context.Background()
-	db, err := sql.Open("sqlite", ":memory:")
+
+	var confDir string
+	confDir, err := os.UserConfigDir()
+	if err != nil {
+		log.Fatalf("%v\n", err)
+	}
+
+	configFile := path.Join(confDir, "singerbench.db")
+
+	db, err := sql.Open("sqlite", configFile)
 	if err != nil {
 		log.Fatalf("%w\n", err)
 	}
