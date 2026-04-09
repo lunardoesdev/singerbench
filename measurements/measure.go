@@ -2,7 +2,6 @@ package measurements
 
 import (
 	"context"
-	"crypto/tls"
 	"fmt"
 	"io"
 	"net"
@@ -27,13 +26,12 @@ func getFreePort() int {
 }
 
 func Measure(link string) (datewhen int64, firstbyte int64, lastbyte int64, ping int64, err error) {
-	// Create and start proxy from any share link (replace with your actual server)
 	port := getFreePort()
+
 	proxy, err := singerbox.FromSharedLink(
 		link,
 		singerbox.ProxyConfig{
-			ListenAddr: fmt.Sprintf("127.0.0.1:%v", port),
-			// LogLevel: "info",  // Uncomment to see connection logs
+			ListenAddr: fmt.Sprintf("127.0.0.1:%d", port),
 		},
 	)
 	if err != nil {
@@ -41,35 +39,48 @@ func Measure(link string) (datewhen int64, firstbyte int64, lastbyte int64, ping
 	}
 	defer proxy.Stop()
 
-	var connectStart, connectDone, firstByte int64
-	start := time.Now().UnixMilli()
-
-	trace := &httptrace.ClientTrace{
-		ConnectStart: func(network, addr string) {
-			connectStart = time.Now().UnixMilli() - start
-		},
-		ConnectDone: func(network, addr string, err error) {
-			connectDone = time.Now().UnixMilli() - start
-		},
-		GotFirstResponseByte: func() {
-			firstByte = time.Now().UnixMilli() - start
-		},
-		TLSHandshakeDone: func(state tls.ConnectionState, err error) {},
-	}
-
-	proxyURL, err := url.Parse(fmt.Sprintf("http://127.0.0.1:%v", port))
+	proxyURL, err := url.Parse(fmt.Sprintf("http://127.0.0.1:%d", port))
 	if err != nil {
 		return 0, 0, 0, 0, err
 	}
 
-	httpClient := &http.Client{
-		Transport: &http.Transport{
-			Proxy: http.ProxyURL(proxyURL),
+	var (
+		connectStart time.Time
+		connectDone  time.Time
+		gotFirstByte time.Time
+	)
+
+	start := time.Now()
+
+	trace := &httptrace.ClientTrace{
+		ConnectStart: func(network, addr string) {
+			connectStart = time.Now()
+		},
+		ConnectDone: func(network, addr string, err error) {
+			connectDone = time.Now()
+		},
+		GotFirstResponseByte: func() {
+			gotFirstByte = time.Now()
 		},
 	}
 
-	req, err := http.NewRequestWithContext(httptrace.WithClientTrace(context.Background(), trace),
-		"GET", "http://cachefly.cachefly.net/1mb.test", nil)
+	httpClient := &http.Client{
+		Timeout: 3 * time.Second,
+		Transport: &http.Transport{
+			Proxy:             http.ProxyURL(proxyURL),
+			DisableKeepAlives: true,
+		},
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	req, err := http.NewRequestWithContext(
+		httptrace.WithClientTrace(ctx, trace),
+		http.MethodGet,
+		"https://cachefly.cachefly.net/1mb.test",
+		nil,
+	)
 	if err != nil {
 		return 0, 0, 0, 0, err
 	}
@@ -84,9 +95,20 @@ func Measure(link string) (datewhen int64, firstbyte int64, lastbyte int64, ping
 	if err != nil {
 		return 0, 0, 0, 0, err
 	}
-	lastbyte = time.Now().UnixMilli() - start
 
-	_ = connectStart
-	_ = connectDone
-	return start, firstByte, lastbyte, connectDone, nil
+	end := time.Now()
+
+	var pingDur time.Duration
+	if !connectStart.IsZero() && !connectDone.IsZero() {
+		pingDur = connectDone.Sub(connectStart)
+	}
+
+	var firstByteDur time.Duration
+	if !gotFirstByte.IsZero() {
+		firstByteDur = gotFirstByte.Sub(start)
+	}
+
+	lastByteDur := end.Sub(start)
+
+	return start.UnixMilli(), firstByteDur.Milliseconds(), lastByteDur.Milliseconds(), pingDur.Milliseconds(), nil
 }
