@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"context"
+	"database/sql"
 	"fmt"
 	"log"
 	"net/http"
@@ -22,6 +23,8 @@ type Config struct {
 	} `goopt:"kind:command;name:list-subscriptions;desc:list subscriptions"`
 	FetchSubscriptions struct {
 	} `goopt:"kind:command;name:fetch-subscriptions;desc:fetch subscriptions"`
+	RemoveSubscriptions struct {
+	} `goopt:"kind:command;name:remove-subscriptions;desc:remove subscriptions"`
 }
 
 func run() error {
@@ -54,7 +57,25 @@ func run() error {
 		}
 	}
 
+	if parser.HasCommand("remove-subscriptions") {
+		for _, link := range args {
+			fmt.Printf("removing %v\n", link.Value)
+			err = db2.Queries.RemoveSubscription(ctx, sql.NullString{
+				String: link.Value, Valid: true,
+			})
+			if err != nil {
+				//probably doesn't matter; do nothing
+			}
+		}
+	}
+
 	if parser.HasCommand("list-subscriptions") {
+		for sub := range db2.IterateSubscriptions(24) {
+			fmt.Println(sub.Link.String)
+		}
+	}
+
+	if parser.HasCommand("list-proxies") {
 		for sub := range db2.IterateSubscriptions(24) {
 			fmt.Println(sub.Link.String)
 		}
