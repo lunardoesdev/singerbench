@@ -1,3 +1,5 @@
+PRAGMA journal_mode=WAL;
+
 create table if not exists proxies (
     id integer primary key autoincrement,
     link text unique

@@ -65,7 +65,7 @@ func Measure(link string) (datewhen int64, firstbyte int64, lastbyte int64, ping
 	}
 
 	httpClient := &http.Client{
-		Timeout: 8 * time.Second,
+		Timeout: 5 * time.Second,
 		Transport: &http.Transport{
 			Proxy:             http.ProxyURL(proxyURL),
 			DisableKeepAlives: true,

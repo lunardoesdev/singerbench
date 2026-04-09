@@ -13,6 +13,7 @@ import (
 
 	"github.com/lunardoesdev/singerbench/db2"
 	"github.com/lunardoesdev/singerbench/measurements"
+	"github.com/lunardoesdev/singerbench/mydb"
 	"github.com/napalu/goopt/v2"
 )
 
@@ -38,21 +39,56 @@ type Config struct {
 }
 
 func spawnMeasureWorker(links chan string) {
+	ctx := context.Background()
+	var timer *time.Timer
 myloop:
 	for {
-		timer := time.NewTimer(3 * time.Second)
+		timer = time.NewTimer(3 * time.Second)
 		select {
 		case link := <-links:
 			when, fbyte, lbyte, ping, err := measurements.Measure(link)
 			if err != nil {
-				continue myloop
+				log.Printf("Warning: %v\n", err)
+				break
 			}
 
-			fmt.Printf("when: %v\n", when)
-			fmt.Printf("fbyte: %v\n", fbyte)
-			fmt.Printf("lbyte: %v\n", lbyte)
-			fmt.Printf("ping: %v\n", ping)
+			prx, err := db2.Queries.GetProxyIdByLink(ctx, sql.NullString{
+				String: link, Valid: true})
+			if err != nil {
+				log.Printf("Warning: %v\n", err)
+				break
+			}
+
+			err = db2.Queries.SaveMeasurement(ctx, mydb.SaveMeasurementParams{
+				Serverid: sql.NullInt64{
+					Int64: prx.ID,
+					Valid: true,
+				},
+				Datewhen: sql.NullInt64{
+					Int64: when,
+					Valid: true,
+				},
+				Ping: sql.NullInt64{
+					Int64: ping,
+					Valid: true,
+				},
+				Firstbyte: sql.NullInt64{
+					Int64: fbyte,
+					Valid: true,
+				},
+				Lastbyte: sql.NullInt64{
+					Int64: lbyte,
+					Valid: true,
+				},
+			})
+
+			if err != nil {
+				break
+			}
+
+			log.Printf("Saved proxy: %v", link)
 		case <-timer.C:
+			timer.Stop()
 			break myloop
 		}
 		timer.Stop()
@@ -123,7 +159,7 @@ func run() error {
 			return err
 		}
 		for _, proxy := range proxies {
-			fmt.Println(proxy.Link)
+			fmt.Println(proxy.Link.String)
 		}
 	}
 
