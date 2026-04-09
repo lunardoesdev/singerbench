@@ -80,7 +80,10 @@ func Measure(link string) (datewhen int64, firstbyte int64, lastbyte int64, ping
 	}
 	defer resp.Body.Close()
 
-	io.Copy(io.Discard, resp.Body)
+	_, err = io.Copy(io.Discard, resp.Body)
+	if err != nil {
+		return 0, 0, 0, 0, err
+	}
 	lastbyte = time.Now().UnixMilli() - start
 
 	_ = connectStart
