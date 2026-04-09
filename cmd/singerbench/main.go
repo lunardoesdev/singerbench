@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/lunardoesdev/singerbench/db2"
 	"github.com/lunardoesdev/singerbench/measurements"
@@ -30,6 +31,36 @@ type Config struct {
 	} `goopt:"kind:command;name:list-proxies;desc:list proxies"`
 	Measure struct {
 	} `goopt:"kind:command;name:measure;desc:measure all proxies"`
+}
+
+func spawnMeasureWorker(links chan string) {
+	for {
+		timer := time.NewTimer(3 * time.Second)
+		defer timer.Stop()
+		select {
+		case link := <-links:
+			when, fbyte, lbyte, ping, err := measurements.Measure(link)
+			if err != nil {
+				continue
+			}
+
+			fmt.Printf("when: %v\n", when)
+			fmt.Printf("fbyte: %v\n", fbyte)
+			fmt.Printf("lbyte: %v\n", lbyte)
+			fmt.Printf("ping: %v\n", ping)
+		case <-timer.C:
+			break
+		}
+	}
+}
+
+func spawnGoMeasurer(threads int) chan string {
+	channel := make(chan string, threads)
+	for i := 0; i < threads; i++ {
+		go spawnMeasureWorker(channel)
+	}
+
+	return channel
 }
 
 func run() error {
@@ -75,17 +106,9 @@ func run() error {
 	}
 
 	if parser.HasCommand("measure") {
+		links := spawnGoMeasurer(100)
 		for sub := range db2.IterateProxies(24) {
-			when, fbyte, lbyte, ping, err := measurements.Measure(sub.Link.String)
-			if err != nil {
-				fmt.Printf("Warn: while checking %v: error %v\n", sub.Link.String, err)
-				continue
-			}
-			fmt.Printf("Measured %v:\n", sub.Link.String)
-			fmt.Printf("when: %v\n", when)
-			fmt.Printf("fbyte: %v\n", fbyte)
-			fmt.Printf("lbyte: %v\n", lbyte)
-			fmt.Printf("ping: %v\n", ping)
+			links <- sub.Link.String
 		}
 	}
 
