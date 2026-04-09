@@ -31,6 +31,10 @@ type Config struct {
 	} `goopt:"kind:command;name:list-proxies;desc:list proxies"`
 	Measure struct {
 	} `goopt:"kind:command;name:measure;desc:measure all proxies"`
+	Gc struct {
+	} `goopt:"kind:command;name:gc;desc:remove bad proxies"`
+	Print struct {
+	} `goopt:"kind:command;name:print;desc:print good proxies subscription-style"`
 }
 
 func spawnMeasureWorker(links chan string) {
@@ -110,6 +114,16 @@ func run() error {
 		links := spawnGoMeasurer(100)
 		for sub := range db2.IterateProxies(24) {
 			links <- sub.Link.String
+		}
+	}
+
+	if parser.HasCommand("print") {
+		proxies, err := db2.Queries.SelectBestProxies(ctx)
+		if err != nil {
+			return err
+		}
+		for _, proxy := range proxies {
+			fmt.Println(proxy.Link)
 		}
 	}
 

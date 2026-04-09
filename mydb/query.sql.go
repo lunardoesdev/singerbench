@@ -254,3 +254,102 @@ func (q *Queries) SaveMeasurement(ctx context.Context, arg SaveMeasurementParams
 	)
 	return err
 }
+
+const selectBestProxies = `-- name: SelectBestProxies :many
+with ranked as (
+    select
+        m.serverid,
+        m.lastbyte,
+        row_number() over (
+            partition by m.serverid
+            order by m.lastbyte
+        ) as rn,
+        count(*) over (
+            partition by m.serverid
+        ) as cnt
+    from measurements m
+),
+middle_values as (
+    select
+        serverid,
+        lastbyte
+    from ranked
+    where rn in ((cnt + 1) / 2, (cnt + 2) / 2)
+),
+medians as (
+    select
+        serverid,
+        avg(lastbyte * 1.0) as median_lastbyte
+    from middle_values
+    group by serverid
+)
+select
+    p.id,
+    p.link,
+    medians.median_lastbyte
+from proxies p
+join medians on medians.serverid = p.id
+order by medians.median_lastbyte asc, p.id asc
+`
+
+type SelectBestProxiesRow struct {
+	ID             int64
+	Link           sql.NullString
+	MedianLastbyte sql.NullFloat64
+}
+
+func (q *Queries) SelectBestProxies(ctx context.Context) ([]SelectBestProxiesRow, error) {
+	rows, err := q.db.QueryContext(ctx, selectBestProxies)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []SelectBestProxiesRow
+	for rows.Next() {
+		var i SelectBestProxiesRow
+		if err := rows.Scan(&i.ID, &i.Link, &i.MedianLastbyte); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const selectUnmeasuredProxies = `-- name: SelectUnmeasuredProxies :many
+select p.id, p.link
+from proxies p
+where not exists (
+    select 1
+    from measurements m
+    where m.serverid = p.id
+)
+`
+
+func (q *Queries) SelectUnmeasuredProxies(ctx context.Context) ([]Proxy, error) {
+	rows, err := q.db.QueryContext(ctx, selectUnmeasuredProxies)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Proxy
+	for rows.Next() {
+		var i Proxy
+		if err := rows.Scan(&i.ID, &i.Link); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
