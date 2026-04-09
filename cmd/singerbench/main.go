@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/lunardoesdev/singerbench/db2"
+	"github.com/lunardoesdev/singerbench/measurements"
 	"github.com/napalu/goopt/v2"
 )
 
@@ -27,6 +28,8 @@ type Config struct {
 	} `goopt:"kind:command;name:remove-subscriptions;desc:remove subscriptions"`
 	ListProxies struct {
 	} `goopt:"kind:command;name:list-proxies;desc:list proxies"`
+	Measure struct {
+	} `goopt:"kind:command;name:measure;desc:measure all proxies"`
 }
 
 func run() error {
@@ -68,6 +71,20 @@ func run() error {
 			if err != nil {
 				//probably doesn't matter; do nothing
 			}
+		}
+	}
+
+	if parser.HasCommand("measure") {
+		for sub := range db2.IterateProxies(24) {
+			when, fbyte, lbyte, ping, err := measurements.Measure(sub.Link.String)
+			if err != nil {
+				continue
+			}
+			fmt.Printf("Measured %v:\n", sub.Link.String)
+			fmt.Printf("when: %v\n", when)
+			fmt.Printf("fbyte: %v\n", fbyte)
+			fmt.Printf("lbyte: %v\n", lbyte)
+			fmt.Printf("ping: %v\n", ping)
 		}
 	}
 

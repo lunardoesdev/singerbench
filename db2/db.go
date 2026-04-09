@@ -95,7 +95,9 @@ func IterateProxies(pagesize int64) func(func(mydb.Proxy) bool) {
 			}
 
 			for _, v := range page {
-				yield(v)
+				if yield(v) == false {
+					goto finish
+				}
 				curElement++
 			}
 			curPage++
@@ -127,7 +129,9 @@ func IterateSubscriptions(pagesize int64) func(func(mydb.Subscription) bool) {
 			}
 
 			for _, v := range page {
-				yield(v)
+				if yield(v) == false {
+					goto finish2
+				}
 				curElement++
 			}
 			curPage++
@@ -159,7 +163,9 @@ func IterateMeasurements(pagesize int64) func(func(mydb.Measurement) bool) {
 			}
 
 			for _, v := range page {
-				yield(v)
+				if yield(v) == false {
+					goto finish3
+				}
 				curElement++
 			}
 			curPage++
