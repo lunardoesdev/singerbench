@@ -78,6 +78,7 @@ func run() error {
 		for sub := range db2.IterateProxies(24) {
 			when, fbyte, lbyte, ping, err := measurements.Measure(sub.Link.String)
 			if err != nil {
+				fmt.Printf("Warn: while checking %v: error %v\n", sub.Link.String, err)
 				continue
 			}
 			fmt.Printf("Measured %v:\n", sub.Link.String)

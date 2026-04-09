@@ -65,7 +65,7 @@ func Measure(link string) (datewhen int64, firstbyte int64, lastbyte int64, ping
 	}
 
 	httpClient := &http.Client{
-		Timeout: 3 * time.Second,
+		Timeout: 8 * time.Second,
 		Transport: &http.Transport{
 			Proxy:             http.ProxyURL(proxyURL),
 			DisableKeepAlives: true,
@@ -78,7 +78,7 @@ func Measure(link string) (datewhen int64, firstbyte int64, lastbyte int64, ping
 	req, err := http.NewRequestWithContext(
 		httptrace.WithClientTrace(ctx, trace),
 		http.MethodGet,
-		"https://cachefly.cachefly.net/1mb.test",
+		"http://cachefly.cachefly.net/1mb.test",
 		nil,
 	)
 	if err != nil {
@@ -110,5 +110,6 @@ func Measure(link string) (datewhen int64, firstbyte int64, lastbyte int64, ping
 
 	lastByteDur := end.Sub(start)
 
-	return start.UnixMilli(), firstByteDur.Milliseconds(), lastByteDur.Milliseconds(), pingDur.Milliseconds(), nil
+	_ = pingDur
+	return start.UnixMilli(), firstByteDur.Milliseconds(), lastByteDur.Milliseconds(), firstByteDur.Milliseconds(), nil
 }
