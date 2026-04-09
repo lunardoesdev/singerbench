@@ -34,14 +34,14 @@ type Config struct {
 }
 
 func spawnMeasureWorker(links chan string) {
+myloop:
 	for {
 		timer := time.NewTimer(3 * time.Second)
-		defer timer.Stop()
 		select {
 		case link := <-links:
 			when, fbyte, lbyte, ping, err := measurements.Measure(link)
 			if err != nil {
-				continue
+				continue myloop
 			}
 
 			fmt.Printf("when: %v\n", when)
@@ -49,8 +49,9 @@ func spawnMeasureWorker(links chan string) {
 			fmt.Printf("lbyte: %v\n", lbyte)
 			fmt.Printf("ping: %v\n", ping)
 		case <-timer.C:
-			break
+			break myloop
 		}
+		timer.Stop()
 	}
 }
 
