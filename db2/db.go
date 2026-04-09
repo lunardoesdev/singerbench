@@ -46,6 +46,21 @@ func Addproxy(ctx context.Context, proxy string) error {
 	return nil
 }
 
+func AddSubscription(ctx context.Context, sub string) error {
+	sub0 := sql.NullString{
+		String: sub,
+		Valid:  true,
+	}
+	_, err := Queries.GetSubscriptionIdByLink(ctx, sub0)
+	if err != nil {
+		// sub doesnt exist
+		if err = Queries.AddSubscription(ctx, sub0); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func IterateProxies(pagesize int64) func(func(mydb.Proxy) bool) {
 	return func(yield func(mydb.Proxy) bool) {
 		var curPage int64 = 0
