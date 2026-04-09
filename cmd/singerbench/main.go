@@ -25,6 +25,8 @@ type Config struct {
 	} `goopt:"kind:command;name:fetch-subscriptions;desc:fetch subscriptions"`
 	RemoveSubscriptions struct {
 	} `goopt:"kind:command;name:remove-subscriptions;desc:remove subscriptions"`
+	ListProxies struct {
+	} `goopt:"kind:command;name:list-proxies;desc:list proxies"`
 }
 
 func run() error {
@@ -76,7 +78,7 @@ func run() error {
 	}
 
 	if parser.HasCommand("list-proxies") {
-		for sub := range db2.IterateSubscriptions(24) {
+		for sub := range db2.IterateProxies(24) {
 			fmt.Println(sub.Link.String)
 		}
 	}
